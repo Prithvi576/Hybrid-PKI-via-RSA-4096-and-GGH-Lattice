@@ -3,14 +3,19 @@
 
 #include <string>
 
-class CertificateManager {
+class CertificateManager
+{
 private:
+
     std::string subject;
     std::string issuer;
     std::string serialNumber;
 
+
 public:
+
     CertificateManager();
+
 
     void setCertificateInfo(
         const std::string& subject,
@@ -18,9 +23,15 @@ public:
         const std::string& serialNumber
     );
 
+
     void displayCertificateInfo() const;
 
+
     bool validateCertificate() const;
+
+
+    std::string getCertificateSummary() const;
+
 };
 
 #endif
