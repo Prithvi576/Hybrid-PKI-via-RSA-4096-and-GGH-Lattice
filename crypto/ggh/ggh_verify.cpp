@@ -1,17 +1,22 @@
 #include "crypto_api.hpp"
 
 #include <cmath>
+#include <cstdint>
+#include <string>
+#include <vector>
+
+using namespace std;
 
 namespace hybrid_pki {
 
-std::vector<std::int64_t> gghHashTarget(const std::string& message, std::size_t dimension);
-bool gghIsPublicLatticePoint(const std::vector<std::int64_t>& point,
-                             const std::vector<std::int64_t>& bad_basis,
-                             std::size_t dimension) noexcept;
-long double gghDistanceSquared(const std::vector<std::int64_t>& left,
-                               const std::vector<std::int64_t>& right) noexcept;
+vector<int64_t> gghHashTarget(const string& message, size_t dimension);
+bool gghIsPublicLatticePoint(const vector<int64_t>& point,
+                             const vector<int64_t>& bad_basis,
+                             size_t dimension) noexcept;
+long double gghDistanceSquared(const vector<int64_t>& left,
+                               const vector<int64_t>& right) noexcept;
 
-bool verifyGGH(const std::string& message, const GGHSignature& signature,
+bool verifyGGH(const string& message, const GGHSignature& signature,
                const GGHKeyPair& key_pair) noexcept {
     try {
         if (message.empty() || !key_pair.public_key ||
