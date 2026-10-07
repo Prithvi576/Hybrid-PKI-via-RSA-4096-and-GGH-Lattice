@@ -1,15 +1,30 @@
-# CMake build files
-build/
-
-# Compiled binaries
-*.exe
-*.out
-
-# CMake generated files
+# Build products
+/build/
+/out/
+/CMakeFiles/
 CMakeCache.txt
-CMakeFiles/
 cmake_install.cmake
-Makefile
+*.obj
+*.o
+*.a
+*.lib
+*.dll
+*.exe
+/third_party/
 
-# VS Code files
-.vscode/
+# Private keys, certificates, and local cryptographic runtime material
+*.key
+*.pem
+*.p12
+*.pfx
+*.der
+/keys/
+/runtime/
+
+# Local logs, temporary data, and generated measurement output
+*.log
+*.tmp
+*.bak
+/results/benchmarks/*
+/results/test_results/*
+/results/screenshots/*
