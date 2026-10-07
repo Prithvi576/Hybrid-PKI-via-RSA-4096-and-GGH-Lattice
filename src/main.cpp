@@ -1,23 +1,71 @@
 #include <iostream>
+
 #include "person2_pki/CertificateManager.h"
+#include "person2_pki/PKIManager.h"
 
-int main() {
+int main()
+{
+    PKIManager pki;
 
-    CertificateManager manager;
-
-    manager.setCertificateInfo(
-        "SCADA-Control-Center",
+    pki.initialize(
         "SCADA-Root-CA",
-        "SCADA-001"
+        "CA-001"
     );
 
-    manager.displayCertificateInfo();
+    CertificateManager certificate =
+        pki.issueCertificate(
+            "SCADA-PLC-01",
+            "SCADA-002"
+        );
 
-    if (manager.validateCertificate()) {
-        std::cout << "Certificate Status: VALID" << std::endl;
-    } else {
-        std::cout << "Certificate Status: INVALID" << std::endl;
+    certificate.displayCertificateInfo();
+
+    bool valid =
+        pki.validateCertificate(
+            certificate,
+            "SCADA-002"
+        );
+
+    if(valid)
+    {
+        std::cout << "PKI Validation: VALID"
+                  << std::endl;
     }
+    else
+    {
+        std::cout << "PKI Validation: INVALID"
+                  << std::endl;
+    }
+
+    std::cout << std::endl;
+
+    std::cout << "Revoking certificate..."
+              << std::endl;
+
+    pki.revokeCertificate(
+        "SCADA-002"
+    );
+
+    valid =
+        pki.validateCertificate(
+            certificate,
+            "SCADA-002"
+        );
+
+    if(valid)
+    {
+        std::cout << "PKI Validation: VALID"
+                  << std::endl;
+    }
+    else
+    {
+        std::cout << "PKI Validation: INVALID"
+                  << std::endl;
+    }
+
+    std::cout << std::endl;
+
+    pki.displayPKIStatus();
 
     return 0;
 }
