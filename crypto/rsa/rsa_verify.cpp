@@ -5,9 +5,11 @@
 
 #include <memory>
 
+using namespace std;
+
 namespace hybrid_pki {
 
-bool verifyRSA(const std::string& message, const std::vector<unsigned char>& signature,
+bool verifyRSA(const string& message, const vector<unsigned char>& signature,
                const RSAKeyPair& key_pair) noexcept {
     if (message.empty() || signature.empty()) {
         return false;
@@ -21,7 +23,7 @@ bool verifyRSA(const std::string& message, const std::vector<unsigned char>& sig
     if (raw_context == nullptr) {
         return false;
     }
-    std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> context(raw_context, EVP_MD_CTX_free);
+    unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> context(raw_context, EVP_MD_CTX_free);
     EVP_PKEY_CTX* key_context = nullptr;
     if (EVP_DigestVerifyInit(context.get(), &key_context, EVP_sha256(), nullptr, key) != 1 ||
         key_context == nullptr ||
