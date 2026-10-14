@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+
 #include "CertificateManager.h"
 
 class CertificateAuthority
@@ -15,14 +16,24 @@ private:
 public:
     CertificateAuthority();
 
-    void setCAInfo(const std::string& name, const std::string& identifier);
+    void setCAInfo(
+        const std::string& name,
+        const std::string& identifier
+    );
+
     CertificateManager issueCertificate(
         const std::string& subject,
         const std::string& serialNumber
     );
 
-    bool hasIssuedCertificate(const CertificateManager& certificate) const;
-    bool hasIssuedSerialNumber(const std::string& serialNumber) const;
+    bool hasIssuedCertificate(
+        const CertificateManager& certificate
+    ) const;
+
+    bool hasIssuedSerialNumber(
+        const std::string& serialNumber
+    ) const;
+
     void displayCAInfo() const;
     void displayIssuedCertificates() const;
 };
