@@ -7,21 +7,13 @@
 class RevocationManager
 {
 private:
-
     std::vector<std::string> revokedSerialNumbers;
 
 public:
-
     RevocationManager();
 
-    void revokeCertificate(
-        const std::string& serialNumber
-    );
-
-    bool isRevoked(
-        const std::string& serialNumber
-    ) const;
-
+    bool revokeCertificate(const std::string& serialNumber);
+    bool isRevoked(const std::string& serialNumber) const;
     void displayRevokedCertificates() const;
 };
 

@@ -1,6 +1,7 @@
 #ifndef PKI_MANAGER_H
 #define PKI_MANAGER_H
 
+#include <string>
 #include "CertificateAuthority.h"
 #include "CertificateValidator.h"
 #include "RevocationManager.h"
@@ -8,34 +9,24 @@
 class PKIManager
 {
 private:
-
     CertificateAuthority certificateAuthority;
     CertificateValidator certificateValidator;
     RevocationManager revocationManager;
+    bool initialized;
 
 public:
-
     PKIManager();
 
-    void initialize(
-        const std::string& caName,
-        const std::string& caIdentifier
-    );
-
+    void initialize(const std::string& caName, const std::string& caIdentifier);
     CertificateManager issueCertificate(
         const std::string& subject,
         const std::string& serialNumber
     );
-
     bool validateCertificate(
         const CertificateManager& certificate,
-        const std::string& serialNumber
+        const std::string& expectedSerial
     ) const;
-
-    void revokeCertificate(
-        const std::string& serialNumber
-    );
-
+    bool revokeCertificate(const std::string& serialNumber);
     void displayPKIStatus() const;
 };
 
