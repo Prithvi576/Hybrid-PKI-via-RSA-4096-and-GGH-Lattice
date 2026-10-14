@@ -308,5 +308,5 @@ $openssl = Ensure-OpenSSL -AllowInstall:$allowInstall
 Invoke-ProjectBuild -CMake $cmake -ToolchainRoot $toolchain -OpenSslRoot $openssl -RunTests:(-not $SkipTests)
 
 Write-Host ""
-Write-Status OK "Setup complete. Run .\run.ps1 to launch the dashboard."
+Write-Status OK "Setup complete. Run .\run.ps1 to launch the sender GUI."
 exit 0

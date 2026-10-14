@@ -25,4 +25,4 @@ Legacy MinGW.org GCC 6.3 is not supported. Use a modern MinGW-w64 toolchain inst
 
 ## GUI demonstration
 
-Run `build/hybrid_crypto_gui.exe`. Generate both keys, enter a command, sign, verify, and use the tampering controls. RSA/GGH results, signature sizes, event log entries, and timings are produced by the live backend. Private keys are never displayed or persisted.
+Run `build/sender_gui.exe` (or `.\run.ps1`). Manage SCADA machines, generate per-machine RSA-4096 and GGH keys, compose and hybrid-sign commands, and transmit them via TCP with full conversation history and persistence.
