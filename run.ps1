@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Build/test (if needed) and launch the Hybrid PKI SCADA cryptography GUI.
+  Build/test (if needed) and launch the Hybrid PKI SCADA sender GUI.
 #>
 [CmdletBinding()]
 param(
@@ -17,7 +17,7 @@ Set-Location -LiteralPath $ScriptRoot
 
 $BuildDir = Join-Path $ScriptRoot "build"
 $StateFile = Join-Path $BuildDir "setup_state.json"
-$GuiExe = Join-Path $BuildDir "hybrid_crypto_gui.exe"
+$GuiExe = Join-Path $BuildDir "sender_gui.exe"
 $SetupScript = Join-Path $ScriptRoot "setup.ps1"
 $PreferredToolchain = "C:\mingw64"
 $OpenSslRootDefault = "C:\Program Files\OpenSSL-Win64"

@@ -79,11 +79,21 @@ if(BUILD_TESTING)
 endif()
 
 if(WIN32)
-    add_executable(hybrid_crypto_gui WIN32 crypto/gui/crypto_gui.cpp)
-    target_link_libraries(hybrid_crypto_gui PRIVATE hybrid_crypto comctl32 gdi32 user32)
+
+    add_executable(sender_gui WIN32
+        sender/gui/sender_gui.cpp
+        sender/storage/local_storage.cpp
+        sender/machines/machine_manager.cpp
+        sender/messaging/message_store.cpp
+        sender/networking/sender_network.cpp)
+    target_include_directories(sender_gui PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/crypto"
+        "${CMAKE_CURRENT_SOURCE_DIR}/sender"
+        "${OPENSSL_INCLUDE_DIR}")
+    target_link_libraries(sender_gui PRIVATE hybrid_crypto comctl32 gdi32 user32 ws2_32)
     if(MINGW)
-        target_compile_definitions(hybrid_crypto_gui PRIVATE UNICODE _UNICODE)
-        target_link_options(hybrid_crypto_gui PRIVATE -municode)
+        target_compile_definitions(sender_gui PRIVATE UNICODE _UNICODE)
+        target_link_options(sender_gui PRIVATE -municode)
     endif()
-    copy_openssl_runtime(hybrid_crypto_gui)
+    copy_openssl_runtime(sender_gui)
 endif()
