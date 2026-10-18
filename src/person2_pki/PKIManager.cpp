@@ -1,23 +1,23 @@
+
 #include "PKIManager.h"
 
 #include <iostream>
 #include <stdexcept>
 
-// Constructor
 PKIManager::PKIManager()
     : certificateAuthority(),
       certificateValidator(),
       revocationManager(),
-      initialized(false)
+      initialized(false),
+      trustedCaBundlePath(),
+      revokedSerialNumbersFile()
 {
 }
 
-// Initialize the PKI system
 void PKIManager::initialize(
     const std::string& caName,
     const std::string& caIdentifier)
 {
-    // Reject invalid CA information
     if (caName.empty() || caIdentifier.empty())
     {
         throw std::invalid_argument(
@@ -25,7 +25,6 @@ void PKIManager::initialize(
         );
     }
 
-    // Prevent changing the CA after initialization
     if (initialized)
     {
         throw std::logic_error(
@@ -39,7 +38,6 @@ void PKIManager::initialize(
     initialized = true;
 }
 
-// Issue a certificate
 CertificateManager PKIManager::issueCertificate(
     const std::string& subject,
     const std::string& serialNumber)
@@ -64,7 +62,6 @@ CertificateManager PKIManager::issueCertificate(
     );
 }
 
-// Validate a certificate
 bool PKIManager::validateCertificate(
     const CertificateManager& certificate,
     const std::string& expectedSerial) const
@@ -74,26 +71,26 @@ bool PKIManager::validateCertificate(
         return false;
     }
 
-    // Validate the certificate's fields and expected serial
+    // Check metadata fields and the expected serial.
     if (!certificateValidator.validateCertificateFields(
             certificate, expectedSerial))
     {
         return false;
     }
 
-    // Ensure the certificate claims the trusted CA as issuer
+    // Check the trusted issuer name.
     if (!certificateValidator.validateIssuer(certificate))
     {
         return false;
     }
 
-    // Ensure this CA actually issued the certificate
+    // Check that this CA issued the metadata certificate.
     if (!certificateAuthority.hasIssuedCertificate(certificate))
     {
         return false;
     }
 
-    // Reject revoked certificates
+    // Reject metadata certificates revoked in memory.
     if (revocationManager.isRevoked(
             certificate.getSerialNumber()))
     {
@@ -103,7 +100,70 @@ bool PKIManager::validateCertificate(
     return true;
 }
 
-// Revoke a certificate
+void PKIManager::configureX509Validation(
+    const std::string& caBundlePath,
+    const std::string& revocationFilePath)
+{
+    if (caBundlePath.empty() || revocationFilePath.empty())
+    {
+        throw std::invalid_argument(
+            "CA bundle and revocation file paths cannot be empty."
+        );
+    }
+
+    trustedCaBundlePath = caBundlePath;
+    revokedSerialNumbersFile = revocationFilePath;
+}
+
+bool PKIManager::validateX509Certificate(
+    const std::string& certificatePath,
+    std::string& error) const
+{
+    error.clear();
+
+    if (!initialized)
+    {
+        error = "Initialize PKI before validating certificates.";
+        return false;
+    }
+
+    if (certificatePath.empty())
+    {
+        error = "Certificate path cannot be empty.";
+        return false;
+    }
+
+    if (trustedCaBundlePath.empty() ||
+        revokedSerialNumbersFile.empty())
+    {
+        error = "X.509 validation paths have not been configured.";
+        return false;
+    }
+
+    return certificateValidator.validateX509CertificateWithRevocation(
+        certificatePath,
+        trustedCaBundlePath,
+        revokedSerialNumbersFile,
+        error
+    );
+}
+
+bool PKIManager::revokeX509Certificate(
+    const std::string& serialNumber)
+{
+    if (!initialized ||
+        serialNumber.empty() ||
+        revokedSerialNumbersFile.empty())
+    {
+        return false;
+    }
+
+    return revocationManager.revokeCertificateInFile(
+        serialNumber,
+        revokedSerialNumbersFile
+    );
+}
+
 bool PKIManager::revokeCertificate(
     const std::string& serialNumber)
 {
@@ -112,17 +172,15 @@ bool PKIManager::revokeCertificate(
         return false;
     }
 
-    // Only revoke certificates issued by this CA
+    // This method handles metadata certificates only.
     if (!certificateAuthority.hasIssuedSerialNumber(serialNumber))
     {
         return false;
     }
 
-    // RevocationManager handles duplicate revocation
     return revocationManager.revokeCertificate(serialNumber);
 }
 
-// Display PKI status
 void PKIManager::displayPKIStatus() const
 {
     std::cout << "\n========== PKI STATUS ==========\n";

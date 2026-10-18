@@ -1,171 +1,193 @@
 
 #include <iostream>
-#include <stdexcept>
+#include <fstream>
 #include <string>
+#include <cstdio>
+#include <stdexcept>
 
 #include "PKIManager.h"
+#include "CertificateManager.h"
 
 using namespace std;
 
-int passed = 0;
-int failed = 0;
-
-void test(const string& testName, bool condition)
-{
-    if (condition)
-    {
-        cout << "[PASS] " << testName << '\n';
-        passed++;
-    }
-    else
-    {
-        cout << "[FAIL] " << testName << '\n';
-        failed++;
-    }
-}
-
 int main()
 {
+    int passed = 0;
+    int failed = 0;
+
+    auto test = [&](const string& name, bool condition)
+    {
+        if (condition)
+        {
+            cout << "[PASS] " << name << '\n';
+            ++passed;
+        }
+        else
+        {
+            cout << "[FAIL] " << name << '\n';
+            ++failed;
+        }
+    };
+
     // ==========================================
-    // TEST GROUP 1: INITIALIZATION
+    // GROUP 1: INITIALIZATION
     // ==========================================
 
     PKIManager pki;
-    bool initializationSucceeded = true;
+
+    bool initializedSuccessfully = false;
 
     try
     {
-        pki.initialize("SCADA Root CA", "SCADA-CA-001");
+        pki.initialize("SCADA-Root-CA", "CA-001");
+        initializedSuccessfully = true;
     }
     catch (...)
     {
-        initializationSucceeded = false;
+        initializedSuccessfully = false;
     }
 
-    test("PKI initializes successfully", initializationSucceeded);
+    test(
+        "PKI initializes successfully",
+        initializedSuccessfully
+    );
 
     PKIManager emptyNamePKI;
     bool emptyNameRejected = false;
 
     try
     {
-        emptyNamePKI.initialize("", "SCADA-CA-002");
+        emptyNamePKI.initialize("", "CA-001");
     }
     catch (const invalid_argument&)
     {
         emptyNameRejected = true;
     }
 
-    test("Empty CA name is rejected", emptyNameRejected);
+    test(
+        "Empty CA name is rejected",
+        emptyNameRejected
+    );
 
     PKIManager emptyIdentifierPKI;
     bool emptyIdentifierRejected = false;
 
     try
     {
-        emptyIdentifierPKI.initialize("SCADA Root CA", "");
+        emptyIdentifierPKI.initialize("SCADA-Root-CA", "");
     }
     catch (const invalid_argument&)
     {
         emptyIdentifierRejected = true;
     }
 
-    test("Empty CA identifier is rejected", emptyIdentifierRejected);
+    test(
+        "Empty CA identifier is rejected",
+        emptyIdentifierRejected
+    );
 
-    bool issuanceBeforeInitializationRejected = false;
+    PKIManager failedInitializationPKI;
+    bool failedInitializationLeavesUninitialized = false;
 
     try
     {
-        emptyNamePKI.issueCertificate(
-            "SCADA-DEVICE-INVALID",
-            "SCADA-INVALID-001"
-        );
+        failedInitializationPKI.initialize("", "");
     }
-    catch (const logic_error&)
+    catch (const invalid_argument&)
     {
-        issuanceBeforeInitializationRejected = true;
+        try
+        {
+            failedInitializationPKI.issueCertificate(
+                "Device-A",
+                "100"
+            );
+        }
+        catch (const logic_error&)
+        {
+            failedInitializationLeavesUninitialized = true;
+        }
     }
 
     test(
         "Failed initialization leaves PKI uninitialized",
-        issuanceBeforeInitializationRejected
+        failedInitializationLeavesUninitialized
     );
 
-    bool reinitializationRejected = false;
+    bool repeatedInitializationRejected = false;
 
     try
     {
-        pki.initialize("Replacement CA", "SCADA-CA-999");
+        pki.initialize("Another-CA", "CA-002");
     }
     catch (const logic_error&)
     {
-        reinitializationRejected = true;
+        repeatedInitializationRejected = true;
     }
 
     test(
         "Repeated PKI initialization is rejected",
-        reinitializationRejected
+        repeatedInitializationRejected
     );
 
     // ==========================================
-    // TEST GROUP 2: CERTIFICATE ISSUANCE
+    // GROUP 2: CERTIFICATE ISSUANCE
     // ==========================================
 
-    CertificateManager certificate;
-    bool issuanceSucceeded = true;
+    CertificateManager certificate =
+        pki.issueCertificate("SCADA-Device-A", "SCADA-001");
 
-    try
-    {
-        certificate = pki.issueCertificate(
-            "SCADA-DEVICE-001",
-            "SCADA-TEST-001"
-        );
-    }
-    catch (...)
-    {
-        issuanceSucceeded = false;
-    }
-
-    test("Certificate issuance succeeds", issuanceSucceeded);
+    test(
+        "Certificate issuance succeeds",
+        !certificate.getSubject().empty() &&
+        !certificate.getSerialNumber().empty()
+    );
 
     bool emptySubjectRejected = false;
 
     try
     {
-        pki.issueCertificate("", "SCADA-TEST-EMPTY-SUBJECT");
+        pki.issueCertificate("", "SCADA-002");
     }
     catch (const invalid_argument&)
     {
         emptySubjectRejected = true;
     }
 
-    test("Empty certificate subject is rejected", emptySubjectRejected);
+    test(
+        "Empty certificate subject is rejected",
+        emptySubjectRejected
+    );
 
     bool emptySerialRejected = false;
 
     try
     {
-        pki.issueCertificate("SCADA-DEVICE-EMPTY-SERIAL", "");
+        pki.issueCertificate("SCADA-Device-B", "");
     }
     catch (const invalid_argument&)
     {
         emptySerialRejected = true;
     }
 
-    test("Empty certificate serial number is rejected", emptySerialRejected);
-
-    // ==========================================
-    // TEST GROUP 3: CERTIFICATE VALIDATION
-    // ==========================================
+    test(
+        "Empty certificate serial number is rejected",
+        emptySerialRejected
+    );
 
     test(
         "Newly issued certificate validates",
-        pki.validateCertificate(certificate, "SCADA-TEST-001")
+        pki.validateCertificate(
+            certificate,
+            "SCADA-001"
+        )
     );
 
     test(
         "Incorrect serial number is rejected",
-        !pki.validateCertificate(certificate, "WRONG-SERIAL")
+        !pki.validateCertificate(
+            certificate,
+            "WRONG-SERIAL"
+        )
     );
 
     test(
@@ -173,28 +195,35 @@ int main()
         !pki.validateCertificate(certificate, "")
     );
 
-    CertificateManager modifiedSubject;
-    modifiedSubject.setCertificateInfo(
-        "SCADA-DEVICE-TAMPERED",
-        "SCADA Root CA",
-        "SCADA-TEST-001"
+    // Create a certificate-like object with altered metadata.
+    CertificateManager modifiedCertificate;
+    modifiedCertificate.setCertificateInfo(
+        "Modified-Device",
+        "SCADA-Root-CA",
+        "SCADA-001"
     );
 
     test(
         "Modified subject is rejected",
-        !pki.validateCertificate(modifiedSubject, "SCADA-TEST-001")
+        !pki.validateCertificate(
+            modifiedCertificate,
+            "SCADA-001"
+        )
     );
 
-    CertificateManager wrongIssuer;
-    wrongIssuer.setCertificateInfo(
-        "SCADA-DEVICE-001",
-        "Untrusted CA",
-        "SCADA-TEST-001"
+    CertificateManager untrustedCertificate;
+    untrustedCertificate.setCertificateInfo(
+        "SCADA-Device-X",
+        "Untrusted-CA",
+        "SCADA-999"
     );
 
     test(
         "Certificate from an untrusted issuer is rejected",
-        !pki.validateCertificate(wrongIssuer, "SCADA-TEST-001")
+        !pki.validateCertificate(
+            untrustedCertificate,
+            "SCADA-999"
+        )
     );
 
     PKIManager uninitializedPKI;
@@ -203,33 +232,29 @@ int main()
         "Uninitialized PKI cannot validate certificates",
         !uninitializedPKI.validateCertificate(
             certificate,
-            "SCADA-TEST-001"
+            "SCADA-001"
         )
     );
 
     // ==========================================
-    // TEST GROUP 4: SERIAL NUMBER UNIQUENESS
+    // GROUP 3: REVOCATION
     // ==========================================
 
-    bool duplicateRejected = false;
+    bool duplicateSerialRejected = false;
 
     try
     {
-        pki.issueCertificate(
-            "SCADA-DEVICE-002",
-            "SCADA-TEST-001"
-        );
+        pki.issueCertificate("Another-Device", "SCADA-001");
     }
-    catch (const invalid_argument&)
+    catch (const exception&)
     {
-        duplicateRejected = true;
+        duplicateSerialRejected = true;
     }
 
-    test("Duplicate serial number is rejected", duplicateRejected);
-
-    // ==========================================
-    // TEST GROUP 5: CERTIFICATE REVOCATION
-    // ==========================================
+    test(
+        "Duplicate serial number is rejected",
+        duplicateSerialRejected
+    );
 
     test(
         "Empty serial number cannot be revoked",
@@ -243,58 +268,166 @@ int main()
 
     test(
         "First revocation succeeds",
-        pki.revokeCertificate("SCADA-TEST-001")
+        pki.revokeCertificate("SCADA-001")
     );
 
     test(
         "Revoked certificate stays invalid",
-        !pki.validateCertificate(certificate, "SCADA-TEST-001")
+        !pki.validateCertificate(
+            certificate,
+            "SCADA-001"
+        )
     );
 
     test(
         "Repeated revocation is rejected",
-        !pki.revokeCertificate("SCADA-TEST-001")
+        !pki.revokeCertificate("SCADA-001")
     );
 
-    // ==========================================
-    // TEST GROUP 6: INDEPENDENT CERTIFICATES
-    // ==========================================
+    CertificateManager secondCertificate =
+        pki.issueCertificate("SCADA-Device-B", "SCADA-002");
 
-    CertificateManager secondCertificate;
-    bool secondIssuanceSucceeded = true;
-
-    try
-    {
-        secondCertificate = pki.issueCertificate(
-            "SCADA-DEVICE-002",
-            "SCADA-TEST-002"
-        );
-    }
-    catch (...)
-    {
-        secondIssuanceSucceeded = false;
-    }
-
-    test("Second certificate can be issued", secondIssuanceSucceeded);
+    test(
+        "Second certificate can be issued",
+        secondCertificate.getSerialNumber() == "SCADA-002"
+    );
 
     test(
         "Another issued certificate remains valid",
-        secondIssuanceSucceeded &&
         pki.validateCertificate(
             secondCertificate,
-            "SCADA-TEST-002"
+            "SCADA-002"
         )
     );
 
     test(
-        "Revoking one certificate does not revoke another",
-        secondIssuanceSucceeded &&
-        !pki.revokeCertificate("SCADA-TEST-001") &&
-        pki.validateCertificate(
-            secondCertificate,
-            "SCADA-TEST-002"
-        )
+        "Revoked certificate cannot be revoked again",
+        !pki.revokeCertificate("SCADA-001")
     );
+
+    // ==========================================
+    // GROUP 4: X.509 CONFIGURATION
+    // ==========================================
+
+    PKIManager x509PKI;
+    x509PKI.initialize("SCADA-X509-CA", "X509-CA-001");
+
+    string error;
+
+    test(
+        "X.509 validation fails when paths are not configured",
+        !x509PKI.validateX509Certificate(
+            "test_client.pem",
+            error
+        ) &&
+        !error.empty()
+    );
+
+    // Create an empty temporary revocation file.
+    const string temporaryRevocationFile =
+        "test_revoked_serials_temporary.txt";
+
+    bool temporaryFileCreated = false;
+
+    {
+        ofstream output(temporaryRevocationFile);
+        temporaryFileCreated = output.is_open();
+    }
+
+    test(
+        "Temporary revocation file can be created",
+        temporaryFileCreated
+    );
+
+    if (temporaryFileCreated)
+    {
+        bool configurationSucceeded = true;
+
+        try
+        {
+            x509PKI.configureX509Validation(
+                "test_ca.pem",
+                temporaryRevocationFile
+            );
+        }
+        catch (const exception&)
+        {
+            configurationSucceeded = false;
+        }
+
+        test(
+            "X.509 validation configuration succeeds",
+            configurationSucceeded
+        );
+
+        // --------------------------------------
+        // Trusted certificate diagnostic
+        // --------------------------------------
+
+        error.clear();
+
+        bool trustedCertificateAccepted = false;
+
+        if (configurationSucceeded)
+        {
+            trustedCertificateAccepted =
+                x509PKI.validateX509Certificate(
+                    "test_client.pem",
+                    error
+                );
+        }
+
+        if (!trustedCertificateAccepted)
+        {
+            cout
+                << "[DEBUG] Trusted certificate validation error: "
+                << error << '\n';
+        }
+
+        test(
+            "Trusted non-revoked X.509 certificate is accepted",
+            trustedCertificateAccepted
+        );
+
+        // --------------------------------------
+        // Persistent revocation
+        // --------------------------------------
+
+        const string clientSerial =
+            "1364B7761FE7A6BFD797EF91C87C38AE65CBC33F";
+
+        test(
+            "X.509 serial can be persistently revoked",
+            configurationSucceeded &&
+            x509PKI.revokeX509Certificate(clientSerial)
+        );
+
+        error.clear();
+
+        bool revokedCertificateRejected = false;
+
+        if (configurationSucceeded)
+        {
+            revokedCertificateRejected =
+                !x509PKI.validateX509Certificate(
+                    "test_client.pem",
+                    error
+                );
+        }
+
+        test(
+            "Persistently revoked X.509 certificate is rejected",
+            revokedCertificateRejected
+        );
+
+        test(
+            "Repeated X.509 revocation is rejected",
+            configurationSucceeded &&
+            !x509PKI.revokeX509Certificate(clientSerial)
+        );
+
+        std::remove(temporaryRevocationFile.c_str());
+    }
 
     // ==========================================
     // FINAL RESULTS
