@@ -1,68 +1,53 @@
 #include "CertificateManager.h"
 #include <iostream>
 
-
 CertificateManager::CertificateManager()
+    : subject(), issuer(), serialNumber()
 {
-    subject = "";
-    issuer = "";
-    serialNumber = "";
 }
-
-
 
 void CertificateManager::setCertificateInfo(
-    const std::string& subject,
-    const std::string& issuer,
-    const std::string& serialNumber
-)
+    const std::string& subjectValue,
+    const std::string& issuerValue,
+    const std::string& serialNumberValue)
 {
-    this->subject = subject;
-    this->issuer = issuer;
-    this->serialNumber = serialNumber;
+    subject = subjectValue;
+    issuer = issuerValue;
+    serialNumber = serialNumberValue;
 }
-
-
 
 void CertificateManager::displayCertificateInfo() const
 {
-    std::cout << "----- Certificate Information -----"
-              << std::endl;
-
-    std::cout << "Subject      : "
-              << subject
-              << std::endl;
-
-
-    std::cout << "Issuer       : "
-              << issuer
-              << std::endl;
-
-
-    std::cout << "Serial Number: "
-              << serialNumber
-              << std::endl;
-
-
-    std::cout << "----------------------------------"
-              << std::endl;
+    std::cout << "----- Certificate Information -----\n"
+              << "Subject      : " << subject << '\n'
+              << "Issuer       : " << issuer << '\n'
+              << "Serial Number: " << serialNumber << '\n'
+              << "-----------------------------------\n";
 }
-
-
 
 bool CertificateManager::validateCertificate() const
 {
-    return !subject.empty() &&
-           !issuer.empty() &&
-           !serialNumber.empty();
+    return !subject.empty() && !issuer.empty() && !serialNumber.empty();
 }
-
-
 
 std::string CertificateManager::getCertificateSummary() const
 {
-    return
-        "Subject: " + subject +
-        "\nIssuer: " + issuer +
-        "\nSerial Number: " + serialNumber;
+    return "Subject: " + subject +
+           "\nIssuer: " + issuer +
+           "\nSerial Number: " + serialNumber;
+}
+
+const std::string& CertificateManager::getSubject() const
+{
+    return subject;
+}
+
+const std::string& CertificateManager::getIssuer() const
+{
+    return issuer;
+}
+
+const std::string& CertificateManager::getSerialNumber() const
+{
+    return serialNumber;
 }

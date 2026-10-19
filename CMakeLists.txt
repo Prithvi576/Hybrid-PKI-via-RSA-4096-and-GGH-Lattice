@@ -240,6 +240,10 @@ add_library(
     scada_security
 
     scada/RBAC.cpp
+    scada/ReplayProtection.cpp
+    scada/CommandValidator.cpp
+    scada/AttackSimulator.cpp
+    scada/SecurityLogger.cpp
 )
 
 
@@ -289,6 +293,7 @@ target_link_libraries(
 )
 
 
+
 if(BUILD_TESTING)
 
     add_test(
@@ -296,7 +301,36 @@ if(BUILD_TESTING)
         COMMAND test_rbac
     )
 
+    # Replay protection test
+    add_executable(test_replay tests/test_replay.cpp)
+    target_link_libraries(test_replay PRIVATE scada_security)
+    add_test(NAME test_replay COMMAND test_replay)
+
+    # Command validation test
+    add_executable(test_command_validation
+        tests/test_command_validation.cpp)
+    target_link_libraries(test_command_validation PRIVATE scada_security)
+    add_test(NAME test_command_validation COMMAND test_command_validation)
+
+    # SCADA security test
+    add_executable(test_scada_security
+        tests/test_scada_security.cpp)
+    target_link_libraries(test_scada_security PRIVATE scada_security)
+    add_test(NAME test_scada_security COMMAND test_scada_security)
+
+    # Attack simulation test
+    add_executable(test_attack_simulation
+        tests/test_attack_simulation.cpp)
+    target_link_libraries(test_attack_simulation PRIVATE scada_security)
+    add_test(NAME test_attack_simulation COMMAND test_attack_simulation)
+
+    # Security logging test
+    add_executable(test_logging tests/test_logging.cpp)
+    target_link_libraries(test_logging PRIVATE scada_security)
+    add_test(NAME test_logging COMMAND test_logging)
+
 endif()
+
 
 
 # ============================================================
@@ -343,5 +377,85 @@ if(WIN32)
 
 
     copy_openssl_runtime(hybrid_crypto_gui)
+
+endif()
+
+
+# ============================================================
+# Person 2 - PKI and X.509 certificate validation
+# ============================================================
+
+set(PKI_SOURCES
+    src/person2_pki/CertificateManager.cpp
+    src/person2_pki/CertificateAuthority.cpp
+    src/person2_pki/CertificateValidator.cpp
+    src/person2_pki/RevocationManager.cpp
+    src/person2_pki/PKIManager.cpp
+)
+
+# Headers shared by PKI source files and tests
+add_library(pki_security STATIC ${PKI_SOURCES})
+
+target_include_directories(pki_security
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/person2_pki"
+        "${OPENSSL_INCLUDE_DIR}"
+)
+
+target_link_libraries(pki_security
+    PUBLIC
+        "${OPENSSL_CRYPTO_LIBRARY}"
+)
+
+copy_openssl_runtime(pki_security)
+
+# ============================================================
+# Person 2 - PKI tests
+# ============================================================
+
+if(BUILD_TESTING)
+
+    add_executable(test_pki
+        tests/pki/test_pki.cpp
+    )
+
+    target_link_libraries(test_pki
+        PRIVATE pki_security
+    )
+
+    target_compile_definitions(test_pki PRIVATE
+        PROJECT_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+
+    copy_openssl_runtime(test_pki)
+
+    add_test(
+        NAME PKI_Tests
+        COMMAND test_pki
+    )
+
+    set_tests_properties(PKI_Tests PROPERTIES
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+
+    add_executable(test_x509
+        tests/pki/test_x509.cpp
+    )
+
+    target_link_libraries(test_x509
+        PRIVATE pki_security
+    )
+
+    copy_openssl_runtime(test_x509)
+
+    add_test(
+        NAME X509_Tests
+        COMMAND test_x509
+    )
+
+    set_tests_properties(X509_Tests PROPERTIES
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
 
 endif()
