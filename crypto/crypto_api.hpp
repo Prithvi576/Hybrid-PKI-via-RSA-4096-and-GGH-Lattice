@@ -59,10 +59,18 @@ struct GGHKeyPair {
     bool has_public_key()  const noexcept;
 };
 
+
 GGHKeyPair   generateGGHKeyPair();
 GGHSignature signGGH(const std::string& message, const GGHKeyPair& key_pair);
-bool         verifyGGH(const std::string& message, const GGHSignature& signature,
-                        const GGHKeyPair& key_pair) noexcept;
+
+bool verifyGGH(const std::string& message,
+               const GGHSignature& signature,
+               const GGHPublicKey& public_key) noexcept;
+
+bool verifyGGH(const std::string& message,
+               const GGHSignature& signature,
+               const GGHKeyPair& key_pair) noexcept;
+
 std::size_t  gghSignatureSize(const GGHSignature& signature) noexcept;
 std::string  gghConfiguration();
 

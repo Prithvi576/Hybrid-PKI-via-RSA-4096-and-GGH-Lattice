@@ -62,6 +62,10 @@ int main() {
               "GGH signature has n=16 lattice coordinates");
         check(hybrid_pki::verifyGGH(message, signature, key_pair),
               "GGH verification passes for valid message+signature");
+        check(
+            hybrid_pki::verifyGGH(
+                  message, signature, *key_pair.public_key),
+            "GGH verification works with public key only");
 
         // --- Deterministic signing (same message, same key = same signature) ---
         const auto signature_2 = hybrid_pki::signGGH(message, key_pair);
