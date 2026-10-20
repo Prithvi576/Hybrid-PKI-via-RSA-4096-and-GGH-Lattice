@@ -6,10 +6,12 @@ CMakeCache.txt
 cmake_install.cmake
 *.obj
 *.o
+*.s
 *.a
 *.lib
 *.dll
 *.exe
+dya*
 /third_party/
 
 # Private keys, certificates, and local cryptographic runtime material

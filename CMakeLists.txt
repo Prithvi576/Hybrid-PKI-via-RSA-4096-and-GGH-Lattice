@@ -6,134 +6,119 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(OPENSSL_ROOT_DIR "C:/Program Files/OpenSSL-Win64" CACHE PATH "OpenSSL development root")
+# Centralize all output binaries in the root build directory
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+
+# -----------------------------------------------------------------------------
+# OpenSSL Global Configuration
+# -----------------------------------------------------------------------------
+if(NOT DEFINED OPENSSL_ROOT_DIR AND NOT DEFINED ENV{OPENSSL_ROOT_DIR})
+    if(EXISTS "C:/Program Files/OpenSSL-Win64")
+        set(OPENSSL_ROOT_DIR "C:/Program Files/OpenSSL-Win64" CACHE PATH "OpenSSL development root")
+    elseif(EXISTS "C:/msys64-new/ucrt64")
+        set(OPENSSL_ROOT_DIR "C:/msys64-new/ucrt64" CACHE PATH "OpenSSL development root")
+    endif()
+endif()
+
 find_path(OPENSSL_INCLUDE_DIR openssl/evp.h HINTS "${OPENSSL_ROOT_DIR}/include" REQUIRED)
-find_file(OPENSSL_CRYPTO_DLL NAMES libcrypto-4-x64.dll
+find_file(OPENSSL_CRYPTO_DLL NAMES libcrypto-4-x64.dll libcrypto-3-x64.dll libcrypto-1_1-x64.dll
+    HINTS "${OPENSSL_ROOT_DIR}/bin" REQUIRED)
+find_file(OPENSSL_SSL_DLL NAMES libssl-4-x64.dll libssl-3-x64.dll libssl-1_1-x64.dll
     HINTS "${OPENSSL_ROOT_DIR}/bin" REQUIRED)
 
-# Shining Light OpenSSL ships MSVC import libraries. MinGW needs a generated
-# import library from the official .def that accompanies the same install.
+# MinGW requires import libraries generated from the official .def files
 if(MINGW)
-    set(OPENSSL_DEF "${OPENSSL_ROOT_DIR}/lib/VC/x64/MD/libcrypto.def")
-    if(NOT EXISTS "${OPENSSL_DEF}")
-        message(FATAL_ERROR "OpenSSL MinGW import definition not found: ${OPENSSL_DEF}")
-    endif()
     set(OPENSSL_MINGW_IMPORT_DIR "${CMAKE_BINARY_DIR}/openssl-mingw")
-    set(OPENSSL_CRYPTO_LIBRARY "${OPENSSL_MINGW_IMPORT_DIR}/libcrypto.dll.a")
     file(MAKE_DIRECTORY "${OPENSSL_MINGW_IMPORT_DIR}")
+    find_program(DLLTOOL_EXECUTABLE NAMES dlltool dlltool.exe REQUIRED)
+
+    set(OPENSSL_DEF_CRYPTO "${OPENSSL_ROOT_DIR}/lib/VC/x64/MD/libcrypto.def")
+    set(OPENSSL_CRYPTO_LIBRARY "${OPENSSL_MINGW_IMPORT_DIR}/libcrypto.dll.a")
     if(NOT EXISTS "${OPENSSL_CRYPTO_LIBRARY}")
-        find_program(DLLTOOL_EXECUTABLE NAMES dlltool dlltool.exe REQUIRED)
+        get_filename_component(CRYPTO_DLL_NAME "${OPENSSL_CRYPTO_DLL}" NAME)
         execute_process(
-            COMMAND "${DLLTOOL_EXECUTABLE}" -d "${OPENSSL_DEF}" -l "${OPENSSL_CRYPTO_LIBRARY}"
-                    -D "libcrypto-4-x64.dll"
-            RESULT_VARIABLE OPENSSL_DLLTOOL_RESULT
-            OUTPUT_VARIABLE OPENSSL_DLLTOOL_OUT
-            ERROR_VARIABLE OPENSSL_DLLTOOL_ERR)
-        if(NOT OPENSSL_DLLTOOL_RESULT EQUAL 0 OR NOT EXISTS "${OPENSSL_CRYPTO_LIBRARY}")
-            message(FATAL_ERROR
-                "Failed to generate MinGW OpenSSL import library.\n"
-                "${OPENSSL_DLLTOOL_OUT}\n${OPENSSL_DLLTOOL_ERR}")
+            COMMAND "${DLLTOOL_EXECUTABLE}" -d "${OPENSSL_DEF_CRYPTO}" -l "${OPENSSL_CRYPTO_LIBRARY}"
+                    -D "${CRYPTO_DLL_NAME}"
+            WORKING_DIRECTORY "${OPENSSL_MINGW_IMPORT_DIR}"
+            RESULT_VARIABLE DLLTOOL_RES
+            OUTPUT_VARIABLE DLLTOOL_OUT
+            ERROR_VARIABLE DLLTOOL_ERR)
+        if(NOT DLLTOOL_RES EQUAL 0 OR NOT EXISTS "${OPENSSL_CRYPTO_LIBRARY}")
+            message(FATAL_ERROR "Failed to generate MinGW OpenSSL crypto import library:\n${DLLTOOL_ERR}")
+        endif()
+    endif()
+
+    set(OPENSSL_DEF_SSL "${OPENSSL_ROOT_DIR}/lib/VC/x64/MD/libssl.def")
+    set(OPENSSL_SSL_LIBRARY "${OPENSSL_MINGW_IMPORT_DIR}/libssl.dll.a")
+    if(NOT EXISTS "${OPENSSL_SSL_LIBRARY}")
+        get_filename_component(SSL_DLL_NAME "${OPENSSL_SSL_DLL}" NAME)
+        execute_process(
+            COMMAND "${DLLTOOL_EXECUTABLE}" -d "${OPENSSL_DEF_SSL}" -l "${OPENSSL_SSL_LIBRARY}"
+                    -D "${SSL_DLL_NAME}"
+            WORKING_DIRECTORY "${OPENSSL_MINGW_IMPORT_DIR}"
+            RESULT_VARIABLE DLLTOOL_RES_SSL
+            OUTPUT_VARIABLE DLLTOOL_OUT_SSL
+            ERROR_VARIABLE DLLTOOL_ERR_SSL)
+        if(NOT DLLTOOL_RES_SSL EQUAL 0 OR NOT EXISTS "${OPENSSL_SSL_LIBRARY}")
+            message(FATAL_ERROR "Failed to generate MinGW OpenSSL ssl import library:\n${DLLTOOL_ERR_SSL}")
         endif()
     endif()
 else()
     find_library(OPENSSL_CRYPTO_LIBRARY NAMES libcrypto crypto
-        HINTS "${OPENSSL_ROOT_DIR}/lib/VC/x64/MD" REQUIRED)
+        HINTS "${OPENSSL_ROOT_DIR}/lib/VC/x64/MD" "${OPENSSL_ROOT_DIR}/lib" REQUIRED)
+    find_library(OPENSSL_SSL_LIBRARY NAMES libssl ssl
+        HINTS "${OPENSSL_ROOT_DIR}/lib/VC/x64/MD" "${OPENSSL_ROOT_DIR}/lib" REQUIRED)
 endif()
 
-add_library(hybrid_crypto STATIC
-    crypto/rsa/rsa_keygen.cpp
-    crypto/rsa/rsa_sign.cpp
-    crypto/rsa/rsa_verify.cpp
-    crypto/rsa/rsa_utils.cpp
-    crypto/ggh/ggh_keygen.cpp
-    crypto/ggh/ggh_sign.cpp
-    crypto/ggh/ggh_verify.cpp
-    crypto/ggh/ggh_utils.cpp
-    crypto/hybrid/hybrid_sign.cpp
-    crypto/hybrid/hybrid_verify.cpp)
-
-target_include_directories(hybrid_crypto PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/crypto" "${OPENSSL_INCLUDE_DIR}")
-target_link_libraries(hybrid_crypto PUBLIC "${OPENSSL_CRYPTO_LIBRARY}")
-
-if(MSVC)
-    target_compile_options(hybrid_crypto PRIVATE /W4 /permissive-)
-else()
-    target_compile_options(hybrid_crypto PRIVATE -Wall -Wextra -Wpedantic)
+# Global Imported Targets for OpenSSL
+if(NOT TARGET OpenSSL::Crypto)
+    add_library(OpenSSL::Crypto UNKNOWN IMPORTED GLOBAL)
+    set_target_properties(OpenSSL::Crypto PROPERTIES
+        IMPORTED_LOCATION "${OPENSSL_CRYPTO_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${OPENSSL_INCLUDE_DIR}"
+    )
 endif()
 
+if(NOT TARGET OpenSSL::SSL)
+    add_library(OpenSSL::SSL UNKNOWN IMPORTED GLOBAL)
+    set_target_properties(OpenSSL::SSL PROPERTIES
+        IMPORTED_LOCATION "${OPENSSL_SSL_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${OPENSSL_INCLUDE_DIR}"
+        INTERFACE_LINK_LIBRARIES OpenSSL::Crypto
+    )
+endif()
+
+# -----------------------------------------------------------------------------
+# Runtime DLL Deployment Helper
+# -----------------------------------------------------------------------------
 function(copy_openssl_runtime target_name)
-    add_custom_command(TARGET ${target_name} POST_BUILD
-        COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${OPENSSL_CRYPTO_DLL}"
-                "$<TARGET_FILE_DIR:${target_name}>"
-        VERBATIM)
+    if(WIN32)
+        if(EXISTS "${OPENSSL_CRYPTO_DLL}")
+            add_custom_command(TARGET ${target_name} POST_BUILD
+                COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${OPENSSL_CRYPTO_DLL}"
+                        "$<TARGET_FILE_DIR:${target_name}>"
+                VERBATIM)
+        endif()
+        if(EXISTS "${OPENSSL_SSL_DLL}")
+            add_custom_command(TARGET ${target_name} POST_BUILD
+                COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${OPENSSL_SSL_DLL}"
+                        "$<TARGET_FILE_DIR:${target_name}>"
+                VERBATIM)
+        endif()
+    endif()
 endfunction()
 
+# -----------------------------------------------------------------------------
+# Testing Framework
+# -----------------------------------------------------------------------------
 include(CTest)
-if(BUILD_TESTING)
-    foreach(test_source IN ITEMS test_rsa test_ggh test_hybrid)
-        add_executable(${test_source} "crypto/tests/${test_source}.cpp")
-        target_link_libraries(${test_source} PRIVATE hybrid_crypto)
-        copy_openssl_runtime(${test_source})
-        add_test(NAME ${test_source} COMMAND ${test_source})
-    endforeach()
+enable_testing()
 
-    # TCP framing test (Windows / Winsock2 only)
-    if(WIN32)
-        add_executable(test_framing
-            sender/networking/test_framing.cpp
-            sender/networking/sender_network.cpp)
-        target_include_directories(test_framing PRIVATE
-            "${CMAKE_CURRENT_SOURCE_DIR}/sender/networking"
-            "${CMAKE_CURRENT_SOURCE_DIR}/sender")
-        target_link_libraries(test_framing PRIVATE ws2_32)
-        if(MSVC)
-            target_compile_options(test_framing PRIVATE /W4 /permissive-)
-        else()
-            target_compile_options(test_framing PRIVATE -Wall -Wextra -Wpedantic)
-        endif()
-        add_test(NAME test_framing COMMAND test_framing)
-
-        # HTTP Bridge integration test
-        add_executable(test_http_bridge
-            sender/gui/test_http_bridge.cpp
-            sender/gui/http_bridge.cpp
-            sender/storage/local_storage.cpp
-            sender/machines/machine_manager.cpp
-            sender/messaging/message_store.cpp
-            sender/networking/sender_network.cpp)
-        target_include_directories(test_http_bridge PRIVATE
-            "${CMAKE_CURRENT_SOURCE_DIR}/crypto"
-            "${CMAKE_CURRENT_SOURCE_DIR}/sender"
-            "${OPENSSL_INCLUDE_DIR}")
-        target_link_libraries(test_http_bridge PRIVATE hybrid_crypto ws2_32)
-        copy_openssl_runtime(test_http_bridge)
-        add_test(NAME test_http_bridge COMMAND test_http_bridge)
-    endif()
-endif()
-
-if(WIN32)
-
-    add_executable(sender_gui WIN32
-        sender/gui/sender_gui.cpp
-        sender/gui/http_bridge.cpp
-        sender/storage/local_storage.cpp
-        sender/machines/machine_manager.cpp
-        sender/messaging/message_store.cpp
-        sender/networking/sender_network.cpp)
-    target_include_directories(sender_gui PRIVATE
-        "${CMAKE_CURRENT_SOURCE_DIR}/crypto"
-        "${CMAKE_CURRENT_SOURCE_DIR}/sender"
-        "${OPENSSL_INCLUDE_DIR}")
-    target_link_libraries(sender_gui PRIVATE hybrid_crypto comctl32 gdi32 user32 ws2_32)
-    if(MINGW)
-        target_compile_definitions(sender_gui PRIVATE UNICODE _UNICODE)
-        target_link_options(sender_gui PRIVATE -municode)
-    endif()
-    copy_openssl_runtime(sender_gui)
-
-    add_custom_command(TARGET sender_gui POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_CURRENT_SOURCE_DIR}/sender/ui"
-        "$<TARGET_FILE_DIR:sender_gui>/ui")
-endif()
-
+# -----------------------------------------------------------------------------
+# Project Subdirectories
+# -----------------------------------------------------------------------------
+add_subdirectory(Person1)
+add_subdirectory(Person2)
+add_subdirectory(integration)

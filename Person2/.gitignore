@@ -1,0 +1,61 @@
+
+# CMake build directories
+build/
+build-pki/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+build.ninja
+.ninja_deps
+.ninja_log
+
+# Compiled binaries and object files
+*.exe
+*.out
+*.o
+*.obj
+*.a
+*.lib
+*.dll
+*.so
+
+# Temporary compiler test
+compiler_test.cpp
+
+# Ignore local/generated PKI files, except approved public test certificates
+pki_test_certs/*
+!pki_test_certs/
+pki_test_certs/*
+!pki_test_certs/test_ca.pem
+!pki_test_certs/test_client.pem
+!pki_test_certs/test_expired.pem
+!pki_test_certs/test_no_usage.pem
+!pki_test_certs/test_wrong_ca.pem
+
+# Private keys and sensitive credentials
+*.key
+*.pem
+*.p12
+*.pfx
+.env
+.env.*
+
+# Allow only the approved public test certificates despite the global PEM rule
+!pki_test_certs/test_ca.pem
+!pki_test_certs/test_client.pem
+!pki_test_certs/test_expired.pem
+!pki_test_certs/test_no_usage.pem
+!pki_test_certs/test_wrong_ca.pem
+
+# VS Code files
+.vscode/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Local source backups
+*.bak

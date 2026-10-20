@@ -269,13 +269,13 @@ function Invoke-ProjectBuild {
     }
 
     if ($RunTests) {
-        Write-Status INFO "Running all tests (crypto, framing, and HTTP bridge)..."
+        Write-Status INFO "Running all tests (crypto, framing, HTTP bridge, Person 2 PKI, and integration)..."
         & $CMake -E chdir (Join-Path $ScriptRoot "build") ctest --output-on-failure
         if ($LASTEXITCODE -ne 0) {
             Write-Status ERROR "One or more tests failed."
             exit 1
         }
-        Write-Status OK "All registered tests passed (RSA, GGH, Hybrid, TCP Framing, HTTP Bridge)"
+        Write-Status OK "All registered tests passed (Person 1 Crypto & Networking, Person 2 PKI, Hybrid Integration)"
     }
 
     $state = [ordered]@{

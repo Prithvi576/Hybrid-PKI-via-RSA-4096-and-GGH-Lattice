@@ -34,10 +34,13 @@ string findAssetsDir() {
     if (last_sep != string::npos) exe_dir = exe_dir.substr(0, last_sep);
 
     vector<string> candidates = {
+        exe_dir + "\\..\\Person1\\sender\\ui",
+        "Person1\\sender\\ui",
         exe_dir + "\\..\\sender\\ui",
         "sender\\ui",
         exe_dir + "\\ui",
         ".\\ui",
+        exe_dir + "\\..\\..\\Person1\\sender\\ui",
         exe_dir + "\\..\\..\\sender\\ui"
     };
 
