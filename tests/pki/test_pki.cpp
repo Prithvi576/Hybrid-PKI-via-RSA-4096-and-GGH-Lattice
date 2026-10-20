@@ -4,16 +4,31 @@
 #include <string>
 #include <cstdio>
 #include <stdexcept>
+#include <filesystem>
 
 #include "PKIManager.h"
 #include "CertificateManager.h"
 
 using namespace std;
 
+#ifndef PROJECT_ROOT
+#define PROJECT_ROOT "."
+#endif
+
 int main()
 {
     int passed = 0;
     int failed = 0;
+
+    // Use the project's certificate fixture directory.
+    const string certDir =
+        (filesystem::path(PROJECT_ROOT) / "pki_test_certs").string();
+
+    const string clientCert =
+        (filesystem::path(certDir) / "test_client.pem").string();
+
+    const string caCert =
+        (filesystem::path(certDir) / "test_ca.pem").string();
 
     auto test = [&](const string& name, bool condition)
     {
@@ -314,10 +329,11 @@ int main()
 
     string error;
 
+    // Deliberately leave validation unconfigured for this test.
     test(
         "X.509 validation fails when paths are not configured",
         !x509PKI.validateX509Certificate(
-            "test_client.pem",
+            clientCert,
             error
         ) &&
         !error.empty()
@@ -346,7 +362,7 @@ int main()
         try
         {
             x509PKI.configureX509Validation(
-                "test_ca.pem",
+                caCert,
                 temporaryRevocationFile
             );
         }
@@ -372,7 +388,7 @@ int main()
         {
             trustedCertificateAccepted =
                 x509PKI.validateX509Certificate(
-                    "test_client.pem",
+                    clientCert,
                     error
                 );
         }
@@ -394,7 +410,7 @@ int main()
         // --------------------------------------
 
         const string clientSerial =
-            "1364B7761FE7A6BFD797EF91C87C38AE65CBC33F";
+    "62B06B535AC3E36C518EED2A239DEEFF61936D55";
 
         test(
             "X.509 serial can be persistently revoked",
@@ -410,7 +426,7 @@ int main()
         {
             revokedCertificateRejected =
                 !x509PKI.validateX509Certificate(
-                    "test_client.pem",
+                    clientCert,
                     error
                 );
         }

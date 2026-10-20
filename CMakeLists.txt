@@ -37,8 +37,10 @@ set(PKI_SOURCES
     src/person2_pki/CertificateManager.cpp
     src/person2_pki/CertificateAuthority.cpp
     src/person2_pki/CertificateValidator.cpp
+    src/person2_pki/CertificateIdentityMapper.cpp
     src/person2_pki/RevocationManager.cpp
     src/person2_pki/PKIManager.cpp
+    src/person2_pki/X509CertificateAuthority.cpp
 )
 
 # --------------------------------------------------
@@ -97,6 +99,7 @@ set_tests_properties(PKI_Tests PROPERTIES
 add_executable(test_x509
     tests/pki/test_x509.cpp
     src/person2_pki/CertificateValidator.cpp
+    src/person2_pki/CertificateIdentityMapper.cpp
     src/person2_pki/CertificateManager.cpp
 )
 
@@ -114,7 +117,24 @@ add_test(
 set_tests_properties(X509_Tests PROPERTIES
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
 )
+# --------------------------------------------------
+# X.509 Certificate Authority tests
+# --------------------------------------------------
 
+add_executable(test_x509_ca
+    tests/pki/test_x509_ca.cpp
+    src/person2_pki/X509CertificateAuthority.cpp
+)
+
+target_link_libraries(test_x509_ca
+    PRIVATE
+    OpenSSL::Crypto
+)
+
+add_test(
+    NAME X509_CA_Tests
+    COMMAND test_x509_ca
+)
 # --------------------------------------------------
 # Optional GUI target
 # --------------------------------------------------
@@ -139,4 +159,5 @@ if(BUILD_PKI_GUI)
             "src/person2_pki/PKIGUI.cpp was not found."
         )
     endif()
+
 endif()
