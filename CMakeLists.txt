@@ -251,8 +251,11 @@ target_include_directories(
     scada_security
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/scada"
+        "${CMAKE_CURRENT_SOURCE_DIR}/crypto"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/person2_pki"
     PRIVATE
-        "C:/Program Files/OpenSSL-Win64/include"
+        "${OPENSSL_INCLUDE_DIR}"
 )
 
 
