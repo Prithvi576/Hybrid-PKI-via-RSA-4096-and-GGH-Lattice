@@ -73,16 +73,18 @@ endif()
 add_library(hybrid_crypto STATIC
 
     # RSA
-    crypto/rsa/rsa_keygen.cpp
+     crypto/rsa/rsa_keygen.cpp
     crypto/rsa/rsa_sign.cpp
     crypto/rsa/rsa_verify.cpp
     crypto/rsa/rsa_utils.cpp
-
+    crypto/rsa/rsa_key_storage.cpp
     # GGH
     crypto/ggh/ggh_keygen.cpp
     crypto/ggh/ggh_sign.cpp
     crypto/ggh/ggh_verify.cpp
     crypto/ggh/ggh_utils.cpp
+    crypto/ggh/ggh_key_storage.cpp
+
 
     # Hybrid RSA + GGH
     crypto/hybrid/hybrid_sign.cpp
@@ -203,12 +205,28 @@ if(BUILD_TESTING)
         NAME test_ggh
         COMMAND test_ggh
     )
+    # GGH public-key storage test
+    add_executable(
+        test_ggh_key_storage
+        tests/test_ggh_key_storage.cpp
+    )
+
+    target_link_libraries(
+        test_ggh_key_storage
+        PRIVATE
+            hybrid_crypto
+    )
+
+    add_test(
+        NAME test_ggh_key_storage
+        COMMAND test_ggh_key_storage
+    )
+
 
 
     # --------------------------------------------------------
     # Hybrid RSA + GGH Test
     # --------------------------------------------------------
-
     add_executable(
         test_hybrid
         crypto/tests/test_hybrid.cpp
@@ -216,19 +234,33 @@ if(BUILD_TESTING)
 
     target_link_libraries(
         test_hybrid
-        PRIVATE
-            hybrid_crypto
+        PRIVATE hybrid_crypto
     )
 
     copy_openssl_runtime(test_hybrid)
-
 
     add_test(
         NAME test_hybrid
         COMMAND test_hybrid
     )
 
-endif()
+    # RSA public-key storage test
+    add_executable(
+        test_rsa_key_storage
+        tests/test_rsa_key_storage.cpp
+    )
+
+    target_link_libraries(
+        test_rsa_key_storage
+        PRIVATE hybrid_crypto
+    )
+
+    add_test(
+        NAME test_rsa_key_storage
+        COMMAND test_rsa_key_storage
+    )
+
+endif() # End Person 1 cryptography tests
 
 
 
