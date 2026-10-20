@@ -1,11 +1,14 @@
 #include "CommandValidator.h"
+#include "SecurityLogger.h"
 
 CommandValidator::CommandValidator(
     RBAC& rbac,
-    ReplayProtection& replayProtection
+    ReplayProtection& replayProtection,
+    SecurityLogger* logger
 )
     : rbac(rbac),
-      replayProtection(replayProtection)
+      replayProtection(replayProtection),
+      logger(logger)
 {
 }
 
@@ -14,33 +17,38 @@ bool CommandValidator::validate(
     std::uint64_t currentTime
 )
 {
-    // 1. RBAC authorization
     if (!rbac.isAuthorized(command.role, command.command))
     {
+        if (logger)
+            logger->warning("RBAC rejected command from user " +
+                            command.userId);
         return false;
     }
 
-    // 2. Timestamp validation
     if (!replayProtection.isTimestampValid(
-            command.timestamp,
-            currentTime))
+            command.timestamp, currentTime))
     {
+        if (logger)
+            logger->warning("Invalid or expired timestamp for user " +
+                            command.userId);
         return false;
     }
 
-    // 3. Sequence-number freshness
     if (!replayProtection.isSequenceFresh(
-            command.userId,
-            command.sequence))
+            command.userId, command.sequence))
     {
+        if (logger)
+            logger->warning("Replay detected for user " +
+                            command.userId);
         return false;
     }
 
-    // 4. Mark command as processed
     replayProtection.markProcessed(
-        command.userId,
-        command.sequence
-    );
+        command.userId, command.sequence);
+
+    if (logger)
+        logger->info("Command " + command.command +
+                     " accepted for user " + command.userId);
 
     return true;
 }

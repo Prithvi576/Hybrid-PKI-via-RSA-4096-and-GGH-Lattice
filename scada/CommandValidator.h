@@ -15,12 +15,14 @@ struct SCADACommand {
     std::uint64_t sequence;
 };
 
+class SecurityLogger;
 class CommandValidator {
 public:
     CommandValidator(
-        RBAC& rbac,
-        ReplayProtection& replayProtection
-    );
+    RBAC& rbac,
+    ReplayProtection& replayProtection,
+    SecurityLogger* logger = nullptr
+);
 
     bool validate(
         const SCADACommand& command,
@@ -30,4 +32,5 @@ public:
 private:
     RBAC& rbac;
     ReplayProtection& replayProtection;
+    SecurityLogger* logger;
 };

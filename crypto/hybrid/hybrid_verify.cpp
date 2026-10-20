@@ -18,7 +18,10 @@ HybridVerificationResult hybridVerify(const HybridSignedCommand& command,
         result.rsa_valid = verifyRSA(message, command.rsa_signature, rsa_key_pair);
         const auto rsa_end = chrono::steady_clock::now();
         const auto ggh_start = chrono::steady_clock::now();
-        result.ggh_valid = verifyGGH(message, command.ggh_signature, ggh_key_pair);
+        result.ggh_valid =
+                ggh_key_pair.public_key &&
+                verifyGGH(message, command.ggh_signature,
+                        *ggh_key_pair.public_key);
         const auto ggh_end = chrono::steady_clock::now();
         result.overall_valid = result.rsa_valid && result.ggh_valid;
         result.measurements.rsa =

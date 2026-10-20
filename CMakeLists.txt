@@ -231,6 +231,7 @@ if(BUILD_TESTING)
 endif()
 
 
+
 # ============================================================
 # Person 3 - SCADA Security
 # RBAC
@@ -246,12 +247,14 @@ add_library(
     scada/SecurityLogger.cpp
 )
 
-
 target_include_directories(
     scada_security
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/scada"
+    PRIVATE
+        "C:/Program Files/OpenSSL-Win64/include"
 )
+
 
 
 if(MSVC)
@@ -321,8 +324,18 @@ if(BUILD_TESTING)
     # Attack simulation test
     add_executable(test_attack_simulation
         tests/test_attack_simulation.cpp)
-    target_link_libraries(test_attack_simulation PRIVATE scada_security)
+    target_link_libraries(
+    test_attack_simulation
+    PRIVATE
+        scada_security
+        hybrid_crypto
+        pki_security
+    )
     add_test(NAME test_attack_simulation COMMAND test_attack_simulation)
+
+set_tests_properties(test_attack_simulation PROPERTIES
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+)
 
     # Security logging test
     add_executable(test_logging tests/test_logging.cpp)

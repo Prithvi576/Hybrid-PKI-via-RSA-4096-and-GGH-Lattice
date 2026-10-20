@@ -1,10 +1,12 @@
-#pragma once
+
+#ifndef ATTACK_SIMULATOR_H
+#define ATTACK_SIMULATOR_H
 
 #include <string>
 
 struct AttackResult {
     std::string attackType;
-    bool detected;
+    bool detected = false;
     std::string message;
 };
 
@@ -16,10 +18,9 @@ public:
     );
 
     AttackResult simulateReplayAttack();
-
     AttackResult simulateModifiedCommand();
-
     AttackResult simulateInvalidCertificate();
-
     AttackResult simulateExpiredCertificate();
 };
+
+#endif
