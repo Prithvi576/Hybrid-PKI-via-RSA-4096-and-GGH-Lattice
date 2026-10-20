@@ -239,7 +239,7 @@ function Invoke-ProjectBuild {
         exit 1
     }
 
-    Write-Status INFO "GUI framework: native Win32 (user32/gdi32/comctl32) - no Qt/wxWidgets required."
+    Write-Status INFO "GUI framework: native Win32 (user32/gdi32/comctl32/ws2_32) - no Qt/wxWidgets required."
     Write-Status INFO "Configuring CMake..."
     & $CMake -S $ScriptRoot -B (Join-Path $ScriptRoot "build") -G "MinGW Makefiles" `
         "-DCMAKE_BUILD_TYPE=Release" `
@@ -261,13 +261,13 @@ function Invoke-ProjectBuild {
     Write-Status OK "Build succeeded"
 
     if ($RunTests) {
-        Write-Status INFO "Running crypto tests..."
+        Write-Status INFO "Running all tests (crypto + TCP framing)..."
         & $CMake -E chdir (Join-Path $ScriptRoot "build") ctest --output-on-failure
         if ($LASTEXITCODE -ne 0) {
-            Write-Status ERROR "Tests failed."
+            Write-Status ERROR "One or more tests failed."
             exit 1
         }
-        Write-Status OK "All registered tests passed"
+        Write-Status OK "All registered tests passed (RSA, GGH, Hybrid, TCP Framing)"
     }
 
     $state = [ordered]@{

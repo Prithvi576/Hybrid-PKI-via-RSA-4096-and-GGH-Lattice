@@ -76,6 +76,23 @@ if(BUILD_TESTING)
         copy_openssl_runtime(${test_source})
         add_test(NAME ${test_source} COMMAND ${test_source})
     endforeach()
+
+    # TCP framing test (Windows / Winsock2 only)
+    if(WIN32)
+        add_executable(test_framing
+            sender/networking/test_framing.cpp
+            sender/networking/sender_network.cpp)
+        target_include_directories(test_framing PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/sender/networking"
+            "${CMAKE_CURRENT_SOURCE_DIR}/sender")
+        target_link_libraries(test_framing PRIVATE ws2_32)
+        if(MSVC)
+            target_compile_options(test_framing PRIVATE /W4 /permissive-)
+        else()
+            target_compile_options(test_framing PRIVATE -Wall -Wextra -Wpedantic)
+        endif()
+        add_test(NAME test_framing COMMAND test_framing)
+    endif()
 endif()
 
 if(WIN32)
