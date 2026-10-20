@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
+<defs>
+ <pattern id="grid" width="42" height="42" patternUnits="userSpaceOnUse"><path d="M42 0H0V42" fill="none" stroke="#476174" stroke-width="1" opacity=".23"/></pattern>
+ <radialGradient id="fade"><stop offset="0" stop-color="#1c2b36" stop-opacity=".16"/><stop offset="1" stop-color="#0d141a" stop-opacity=".12"/></radialGradient>
+</defs>
+<rect width="1200" height="900" fill="url(#grid)"/>
+<!-- restrained circuit / telemetry watermark -->
+<g fill="none" stroke="#4b687b" stroke-width="1.4" opacity=".42" stroke-linecap="round" stroke-linejoin="round">
+ <path d="M72 180H220V250H350V320H430 M350 250V170H475 M430 320V405H535V475H635"/>
+ <path d="M1120 145H1010V225H900V300H810 M1010 225V360H930V430H830V510"/>
+ <path d="M90 670H205V590H320V540H420 M420 540V620H510V700H635V780"/>
+ <path d="M1110 690H1010V610H900V565H800 M900 610V745H790V805"/>
+ <path d="M590 80V160H660V230H735V295 M590 820V745H665V680H735V615"/>
+ <rect x="205" y="150" width="70" height="44" rx="4"/><rect x="880" y="280" width="70" height="44" rx="4"/><rect x="300" y="570" width="74" height="44" rx="4"/><rect x="890" y="650" width="74" height="44" rx="4"/>
+ <circle cx="220" cy="250" r="5"/><circle cx="350" cy="320" r="5"/><circle cx="535" cy="475" r="5"/><circle cx="900" cy="300" r="5"/><circle cx="930" cy="430" r="5"/><circle cx="320" cy="540" r="5"/><circle cx="510" cy="700" r="5"/><circle cx="800" cy="565" r="5"/><circle cx="665" cy="680" r="5"/>
+ <path d="M535 475h100v-55h80 M735 295h-75v55h-70 M420 620h-65v-48h-70 M800 565h-75v-65h-70" stroke-dasharray="3 7"/>
+</g>
+<g fill="#56758a" opacity=".55" font-family="monospace" font-size="11" letter-spacing="1.5">
+ <text x="90" y="145">TELEMETRY / NODE 04</text><text x="850" y="255">SECURE CHANNEL</text><text x="100" y="645">COMMAND BUS</text><text x="900" y="730">PKI / TRUST</text>
+</g>
+<rect width="1200" height="900" fill="url(#fade)"/>
+</svg>

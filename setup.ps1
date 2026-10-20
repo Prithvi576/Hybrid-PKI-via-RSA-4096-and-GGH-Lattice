@@ -239,7 +239,7 @@ function Invoke-ProjectBuild {
         exit 1
     }
 
-    Write-Status INFO "GUI framework: native Win32 (user32/gdi32/comctl32/ws2_32) - no Qt/wxWidgets required."
+    Write-Status INFO "GUI framework: Hawk PKI Messenger (Native C++ backend bridge + App-Mode desktop window)."
     Write-Status INFO "Configuring CMake..."
     & $CMake -S $ScriptRoot -B (Join-Path $ScriptRoot "build") -G "MinGW Makefiles" `
         "-DCMAKE_BUILD_TYPE=Release" `
@@ -260,14 +260,22 @@ function Invoke-ProjectBuild {
     }
     Write-Status OK "Build succeeded"
 
+    # Always sync UI assets to build directory
+    $uiSrc = Join-Path $ScriptRoot "sender\ui"
+    $uiDst = Join-Path $ScriptRoot "build\ui"
+    if (Test-Path -LiteralPath $uiSrc) {
+        New-Item -ItemType Directory -Force -Path $uiDst | Out-Null
+        Copy-Item -Path "$uiSrc\*" -Destination $uiDst -Recurse -Force
+    }
+
     if ($RunTests) {
-        Write-Status INFO "Running all tests (crypto + TCP framing)..."
+        Write-Status INFO "Running all tests (crypto, framing, and HTTP bridge)..."
         & $CMake -E chdir (Join-Path $ScriptRoot "build") ctest --output-on-failure
         if ($LASTEXITCODE -ne 0) {
             Write-Status ERROR "One or more tests failed."
             exit 1
         }
-        Write-Status OK "All registered tests passed (RSA, GGH, Hybrid, TCP Framing)"
+        Write-Status OK "All registered tests passed (RSA, GGH, Hybrid, TCP Framing, HTTP Bridge)"
     }
 
     $state = [ordered]@{
@@ -275,7 +283,7 @@ function Invoke-ProjectBuild {
         cmake            = $CMake
         toolchain        = $ToolchainRoot
         opensslRoot      = $OpenSslRoot
-        guiFramework     = "Win32 native"
+        guiFramework     = "Hawk PKI Messenger (Native C++ backend)"
         compilerVersion  = ((& $gpp --version 2>&1 | Select-Object -First 1) | Out-String).Trim()
     }
     New-Item -ItemType Directory -Force -Path $StateDir | Out-Null

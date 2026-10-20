@@ -92,6 +92,22 @@ if(BUILD_TESTING)
             target_compile_options(test_framing PRIVATE -Wall -Wextra -Wpedantic)
         endif()
         add_test(NAME test_framing COMMAND test_framing)
+
+        # HTTP Bridge integration test
+        add_executable(test_http_bridge
+            sender/gui/test_http_bridge.cpp
+            sender/gui/http_bridge.cpp
+            sender/storage/local_storage.cpp
+            sender/machines/machine_manager.cpp
+            sender/messaging/message_store.cpp
+            sender/networking/sender_network.cpp)
+        target_include_directories(test_http_bridge PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}/crypto"
+            "${CMAKE_CURRENT_SOURCE_DIR}/sender"
+            "${OPENSSL_INCLUDE_DIR}")
+        target_link_libraries(test_http_bridge PRIVATE hybrid_crypto ws2_32)
+        copy_openssl_runtime(test_http_bridge)
+        add_test(NAME test_http_bridge COMMAND test_http_bridge)
     endif()
 endif()
 
@@ -99,6 +115,7 @@ if(WIN32)
 
     add_executable(sender_gui WIN32
         sender/gui/sender_gui.cpp
+        sender/gui/http_bridge.cpp
         sender/storage/local_storage.cpp
         sender/machines/machine_manager.cpp
         sender/messaging/message_store.cpp
@@ -113,4 +130,10 @@ if(WIN32)
         target_link_options(sender_gui PRIVATE -municode)
     endif()
     copy_openssl_runtime(sender_gui)
+
+    add_custom_command(TARGET sender_gui POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/sender/ui"
+        "$<TARGET_FILE_DIR:sender_gui>/ui")
 endif()
+

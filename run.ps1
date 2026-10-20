@@ -127,7 +127,7 @@ if ($LASTEXITCODE -ne 0) {
 Write-Status OK "Build succeeded"
 
 if (-not $SkipTests) {
-    Write-Status INFO "Running all tests (crypto + TCP framing) before launch..."
+    Write-Status INFO "Running all tests (crypto, framing, and HTTP bridge) before launch..."
     Push-Location -LiteralPath $BuildDir
     try {
         & $cmake -E chdir $BuildDir ctest --output-on-failure
@@ -138,7 +138,7 @@ if (-not $SkipTests) {
     } finally {
         Pop-Location
     }
-    Write-Status OK "All tests passed (RSA, GGH, Hybrid, TCP Framing)"
+    Write-Status OK "All tests passed (RSA, GGH, Hybrid, TCP Framing, HTTP Bridge)"
 } else {
     Write-Status WARNING "SkipTests set - launching without re-running tests."
 }
@@ -158,6 +158,14 @@ if (-not (Test-Path -LiteralPath $cryptoDll)) {
         Write-Status ERROR "OpenSSL runtime DLL missing."
         exit 1
     }
+}
+
+# Always sync UI assets to build directory
+$uiSrc = Join-Path $ScriptRoot "sender\ui"
+$uiDst = Join-Path $BuildDir "ui"
+if (Test-Path -LiteralPath $uiSrc) {
+    New-Item -ItemType Directory -Force -Path $uiDst | Out-Null
+    Copy-Item -Path "$uiSrc\*" -Destination $uiDst -Recurse -Force
 }
 
 Write-Status INFO "Launching GUI: $GuiExe"
