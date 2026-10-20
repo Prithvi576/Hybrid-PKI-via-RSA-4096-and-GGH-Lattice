@@ -127,18 +127,18 @@ if ($LASTEXITCODE -ne 0) {
 Write-Status OK "Build succeeded"
 
 if (-not $SkipTests) {
-    Write-Status INFO "Running crypto tests before launch..."
+    Write-Status INFO "Running all tests (crypto + TCP framing) before launch..."
     Push-Location -LiteralPath $BuildDir
     try {
         & $cmake -E chdir $BuildDir ctest --output-on-failure
         if ($LASTEXITCODE -ne 0) {
-            Write-Status ERROR "Critical crypto tests failed - GUI will not launch."
+            Write-Status ERROR "Critical tests failed - GUI will not launch."
             exit 1
         }
     } finally {
         Pop-Location
     }
-    Write-Status OK "Crypto tests passed"
+    Write-Status OK "All tests passed (RSA, GGH, Hybrid, TCP Framing)"
 } else {
     Write-Status WARNING "SkipTests set - launching without re-running tests."
 }

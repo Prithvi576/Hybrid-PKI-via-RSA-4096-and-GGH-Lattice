@@ -30,6 +30,13 @@ private:
     static void ensureWsa();
 };
 
+// Wire-protocol limits (enforced in frameMessage; documented in docs/tcp_protocol.md).
+static constexpr uint32_t kFrameMaxCommandLen   = 4096;
+static constexpr uint32_t kFrameMaxTimestampLen = 64;
+static constexpr uint32_t kFrameMaxRsaLen       = 1024;
+static constexpr uint32_t kFrameMaxGghDim       = 256;
+static constexpr uint32_t kFrameMaxPayloadBytes = 1u << 20;  // 1 MiB
+
 std::vector<unsigned char> frameMessage(const std::string& command,
                                          const std::string& timestamp_utc,
                                          uint64_t sequence,

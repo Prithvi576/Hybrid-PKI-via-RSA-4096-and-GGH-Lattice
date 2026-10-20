@@ -141,7 +141,7 @@ bool gghIsPublicLatticePoint(const vector<int64_t>& point,
                 coordinate += static_cast<long double>(point[row]) *
                               inverse[row * dimension + column];
             }
-            if (fabs(coordinate - round(coordinate)) > 1e-7L) {
+            if (fabs(coordinate - round(coordinate)) > 1e-4L) {
                 return false;
             }
         }

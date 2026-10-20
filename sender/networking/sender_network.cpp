@@ -142,11 +142,27 @@ void TcpClient::disconnect() {
 
 // Serialize a signed command into a binary frame.
 // Format: [cmd_len:4][cmd][ts_len:4][ts][seq:8][rsa_len:4][rsa_sig][ggh_dim:4][ggh_values:dim*8]
+// All integers are big-endian.  Limits enforced here match docs/tcp_protocol.md.
+static constexpr uint32_t kMaxCommandLen  = 4096;
+static constexpr uint32_t kMaxTimestampLen = 64;
+static constexpr uint32_t kMaxRsaLen      = 1024;   // 512 bytes for RSA-4096; allow headroom
+static constexpr uint32_t kMaxGghDim      = 256;
+static constexpr uint32_t kMaxPayloadBytes = 1u << 20; // 1 MiB hard ceiling
+
 vector<unsigned char> frameMessage(const string& command,
                                     const string& timestamp_utc,
                                     uint64_t sequence,
                                     const vector<unsigned char>& rsa_sig,
                                     const vector<int64_t>& ggh_lattice_point) {
+    if (command.size() > kMaxCommandLen)
+        throw runtime_error("frameMessage: command exceeds maximum allowed length");
+    if (timestamp_utc.size() > kMaxTimestampLen)
+        throw runtime_error("frameMessage: timestamp exceeds maximum allowed length");
+    if (rsa_sig.size() > kMaxRsaLen)
+        throw runtime_error("frameMessage: RSA signature exceeds maximum allowed length");
+    if (ggh_lattice_point.size() > kMaxGghDim)
+        throw runtime_error("frameMessage: GGH dimension exceeds maximum allowed value");
+
     vector<unsigned char> frame;
     auto pushU32 = [&](uint32_t v) {
         frame.push_back(static_cast<unsigned char>((v >> 24) & 0xFF));
