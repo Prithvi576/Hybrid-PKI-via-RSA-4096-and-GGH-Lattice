@@ -69,7 +69,7 @@ int main() {
 
     string machId = machines.addMachine("Test Unit", "127.0.0.1", 5020);
 
-    sender::HttpBridge bridge(storage, machines, messages, "sender/ui", 0);
+    sender::HttpBridge bridge(storage, machines, messages, "Person1/sender/ui", 0);
     if (!bridge.start()) {
         cerr << "FAIL: Could not start HttpBridge on localhost" << endl;
         return 1;

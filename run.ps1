@@ -127,7 +127,7 @@ if ($LASTEXITCODE -ne 0) {
 Write-Status OK "Build succeeded"
 
 if (-not $SkipTests) {
-    Write-Status INFO "Running all tests (crypto, framing, and HTTP bridge) before launch..."
+    Write-Status INFO "Running all tests (crypto, framing, HTTP bridge, Person 2 PKI, and integration) before launch..."
     Push-Location -LiteralPath $BuildDir
     try {
         & $cmake -E chdir $BuildDir ctest --output-on-failure
@@ -138,7 +138,7 @@ if (-not $SkipTests) {
     } finally {
         Pop-Location
     }
-    Write-Status OK "All tests passed (RSA, GGH, Hybrid, TCP Framing, HTTP Bridge)"
+    Write-Status OK "All tests passed (Person 1 Crypto & Networking, Person 2 PKI, Hybrid Integration)"
 } else {
     Write-Status WARNING "SkipTests set - launching without re-running tests."
 }
@@ -161,7 +161,10 @@ if (-not (Test-Path -LiteralPath $cryptoDll)) {
 }
 
 # Always sync UI assets to build directory
-$uiSrc = Join-Path $ScriptRoot "sender\ui"
+$uiSrc = Join-Path $ScriptRoot "Person1\sender\ui"
+if (-not (Test-Path -LiteralPath $uiSrc)) {
+    $uiSrc = Join-Path $ScriptRoot "sender\ui"
+}
 $uiDst = Join-Path $BuildDir "ui"
 if (Test-Path -LiteralPath $uiSrc) {
     New-Item -ItemType Directory -Force -Path $uiDst | Out-Null

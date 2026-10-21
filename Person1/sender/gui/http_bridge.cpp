@@ -533,6 +533,12 @@ void HttpBridge::handleRequest(const string& method,
 
     // Fallback search locations if assets_dir_ was relative or different
     if (file_bytes.empty()) {
+        file_bytes = readFileBinary("Person1\\sender\\ui\\" + filename);
+    }
+    if (file_bytes.empty()) {
+        file_bytes = readFileBinary("..\\Person1\\sender\\ui\\" + filename);
+    }
+    if (file_bytes.empty()) {
         file_bytes = readFileBinary("sender\\ui\\" + filename);
     }
     if (file_bytes.empty()) {
